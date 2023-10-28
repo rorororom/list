@@ -7,6 +7,7 @@ void PopElement (struct List* list, int index);
 void DumpList(struct List* list);
 void Partion(FILE* file, struct List* list);
 void DtorList (struct List* list);
+void VerifyList (struct List* list);
 
 void InitializationNext (struct List* list);
 void InitializationPrev (struct List* list);

@@ -26,16 +26,13 @@ int main()
     PushElement(&list, 3, 41);
     PushElement(&list, 4, 52);
     PopElement(&list, 1);
-    // PushElement(&list, 5, 51);
-    // PushElement(&list, 7, 78);
-    // PushElement(&list, 1, 11);
-    // PushElement(&list, 13, 15);
-    // PushElement(&list, 8, 82);
-    // PushElement(&list, 9, 99);
+    PushElement(&list, 5, 53);
+    PopElement(&list, 1);
+    PushElement(&list, 4, 11);
+    PushElement(&list, 1, 82);
+    PopElement(&list, 1);
+    PushElement(&list, 2, 99);
 
-    // PopElement(&list, 4);
-    // PopElement(&list, 1);
-    // PopElement(&list, 16);
 
     DtorList(&list);
 }
@@ -102,6 +99,7 @@ void PushElement (struct List* list, int index, int value)
     list->prev[nowIndex] = index; //предыдущий элемент для нового это индекс
 
     DumpList(list);
+    VerifyList(list);
     return;
 }
 
@@ -126,6 +124,7 @@ void PopElement (struct List* list, int index)
     list->free = index;
 
     DumpList(list);
+    VerifyList(list);
 }
 
 void InitializationNext (struct List* list)
@@ -242,4 +241,15 @@ void AddingElementAfter0 (struct List* list, int value)
     list->free = 2;
 
     DumpList(list);
+}
+
+void VerifyList (struct List* list)
+{
+    int i = list->head;
+    while (i != list->tail)
+    {
+        printf ("i = %d\n", i);
+        i = list->next[i];
+    }
+    printf("-------------------------\n");
 }
