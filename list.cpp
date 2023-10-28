@@ -20,7 +20,7 @@ int main()
 
     DumpList(&list);
 
-    PushElement(&list, 0, 15);
+    PushElement(&list, 0, 16);
     PushElement(&list, 1, 20);
     PushElement(&list, 2, 35);
     PushElement(&list, 3, 41);
