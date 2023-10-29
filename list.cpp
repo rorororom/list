@@ -28,7 +28,7 @@ int main()
     PopElement(&list, 5);
     PopElement(&list, 1);
 
-    VerifyList(&list);
+    Verify(&list);
     DtorList(&list);
 }
 
@@ -108,6 +108,7 @@ void PushElement (struct List* list, int index, int value)
     list->prev[nowIndex] = index; //предыдущий элемент для нового это индекс
 
     list->size++;
+    Verify(list);
     DumpList(list);
     return;
 }
@@ -136,6 +137,7 @@ void PopElement (struct List* list, int index)
     list->free = index;
 
     list->size--;
+    Verify(list);
     DumpList(list);
 }
 
@@ -274,13 +276,35 @@ void AddingElementAfter0 (struct List* list, int value)
     list->tail = 1;
     list->free = 2;
 
+    Verify(list);
     DumpList(list);
 }
 
-void VerifyList(struct List* list)
-{
-    assert(list != nullptr);
 
+void Verify (struct List* list)
+{
+    int sum_errors = 0;
+
+    VERIFY_VALUE(data, == NULL, DATA);
+    VERIFY_VALUE(next, == NULL, NEXT);
+    VERIFY_VALUE(prev, == NULL, PREV);
+    VERIFY_VALUE(size, <= 0, SIZE);
+    VERIFY_VALUE(free, <= 0, FREE);
+    VERIFY_VALUE(head, <= 0, HEAD);
+    VERIFY_VALUE(tail, <= 0, TAIL);
+
+    if (VerifyMeaningData (list))
+    {
+        fprintf(LOG_FILE, "errror VerifyMeaningData\n");
+        sum_errors = sum_errors | ERROR_MEANING_BIT;
+    }
+    else fprintf(LOG_FILE, "массивы совпадают\n");
+
+    if (sum_errors > 0) PrintErrors(sum_errors);
+}
+
+int VerifyMeaningData (struct List* list)
+{
     int* arrNext = (int*)malloc(list->size * sizeof(int));
     CHECK_MALLOC(arrNext);
     int* arrPrev = (int*)malloc(list->size * sizeof(int));
@@ -306,27 +330,32 @@ void VerifyList(struct List* list)
         count++;
     }
 
-    int arraysMatch = 1;
+    int arraysMatch = 0;
     for (int j = 0; j < list->size; j++)
     {
         if (arrNext[j] != arrPrev[j])
         {
-            arraysMatch = 0;
+            arraysMatch = 1;
             break;
         }
     }
 
-    if (arraysMatch)
-    {
-        fprintf(LOG_FILE, "Массивы arrNext и arrPrev совпадают.\n");
-    }
-    else
-    {
-        printf("Массивы arrNext и arrPrev не совпадают.\n");
-    }
+    if (arraysMatch == 0) return 0;
+    else return 1;
 
     free(arrNext);
     free(arrPrev);
 }
 
+void PrintErrors (int sum_errors)
+{
+    PRINTERRORS(size, SIZE);
+    PRINTERRORS(data, DATA);
+    PRINTERRORS(next, NEXT);
+    PRINTERRORS(prev, PREV);
+    PRINTERRORS(free, FREE);
+    PRINTERRORS(head, HEAD);
+    PRINTERRORS(tail, TAIL);
+    PRINTERRORS(meaning, MEANING);
+}
 
