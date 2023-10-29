@@ -4,7 +4,6 @@
 #include <math.h>
 
 #include "log_funcs.h"
-
 #include "list.h"
 
 int main()
@@ -20,20 +19,16 @@ int main()
 
     DumpList(&list);
 
-    PushElement(&list, 0, 16);
-    PushElement(&list, 1, 20);
-    PushElement(&list, 2, 35);
-    PushElement(&list, 3, 41);
-    PushElement(&list, 4, 52);
-    PopElement(&list, 1);
-    PushElement(&list, 5, 53);
-    PopElement(&list, 1);
-    PushElement(&list, 4, 11);
-    PushElement(&list, 1, 82);
-    PopElement(&list, 1);
-    PushElement(&list, 2, 99);
+    for (int i = 0; i < WANT_COUNT_ADD; i++)
+    {
+        PushElement(&list, i, 10 * (i+1));
+    }
 
+    PopElement(&list, 3);
+    PopElement(&list, 5);
+    PopElement(&list, 1);
 
+    VerifyList(&list);
     DtorList(&list);
 }
 
@@ -42,10 +37,18 @@ void CtorList (struct List* list)
     list->free = 1;
     list->head = 0;
     list->tail = 0;
+    list->size = 0;
 
     list->data = (int*)calloc(SIZE_DATA, sizeof(int));
+    CHECK_MALLOC(list->data);
     list->next = (int*)calloc(SIZE_DATA, sizeof(int));
+    CHECK_MALLOC(list->next);
     list->prev = (int*)calloc(SIZE_DATA, sizeof(int));
+    CHECK_MALLOC(list->prev);
+
+    InitializationNext (list);
+    InitializationPrev (list);
+    InitializationArr (list->data, SIZE_DATA);
 
     list->data[0] = 0;
     list->next[0] = 0;
@@ -54,6 +57,7 @@ void CtorList (struct List* list)
 
 void DtorList (struct List* list)
 {
+    assert(list != nullptr);
     for (int i = 0; i < SIZE_DATA; i++)
     {
         list->data[i] = 0;
@@ -68,13 +72,18 @@ void DtorList (struct List* list)
     list->free = -1;
     list->head = -1;
     list->tail = -1;
+    list->size = -1;
 }
 
 void PushElement (struct List* list, int index, int value)
 {
+    assert(list != nullptr);
+    assert(index >= 0 && index < SIZE_DATA);
+
     if (index == 0)
     {
         AddingElementAfter0 (list, value);
+        list->size++;
         return;
     }
 
@@ -91,20 +100,23 @@ void PushElement (struct List* list, int index, int value)
     else
     {
         list->next[nowIndex] = list->next[index]; //записываем следующий элемент для нового элемента
-                                              //(это следующий элемент старого элемента)
+                                                  //(это следующий элемент старого элемента)
         list->prev[list->next[nowIndex]] = nowIndex; //предыдущий следующего нового - это индекс нового
     }
 
     list->next[index] = nowIndex; //следующий элемент индекса, это индекс нового элемента
     list->prev[nowIndex] = index; //предыдущий элемент для нового это индекс
 
+    list->size++;
     DumpList(list);
-    VerifyList(list);
     return;
 }
 
 void PopElement (struct List* list, int index)
 {
+    assert(index >= 0 && index < SIZE_DATA);
+    assert(list != nullptr);
+
     list->prev[list->next[index]] = list->prev[index];
     list->next[list->prev[index]] = list->next[index];
 
@@ -123,12 +135,14 @@ void PopElement (struct List* list, int index)
     list->data[index] = 0;
     list->free = index;
 
+    list->size--;
     DumpList(list);
-    VerifyList(list);
 }
 
 void InitializationNext (struct List* list)
 {
+    assert(list != nullptr);
+
     for (int i = 1; i < SIZE_DATA; i++)
     {
         if (i == SIZE_DATA - 1) list->next[i] = 0;
@@ -138,6 +152,8 @@ void InitializationNext (struct List* list)
 
 void InitializationPrev (struct List* list)
 {
+    assert(list != nullptr);
+
     for (int i = 1; i < SIZE_DATA; i++)
     {
         if (i == 1) list->prev[i] = 0;
@@ -145,8 +161,20 @@ void InitializationPrev (struct List* list)
     }
 }
 
+void InitializationArr (int* arr, int size)
+{
+    assert(arr != nullptr);
+
+    for (int i = 0; i < size; i++)
+    {
+        arr[i] = 0;
+    }
+}
+
 void MyIniz (struct List* list)
 {
+    assert(list != nullptr);
+
     for (int i = 1; i < NOW_DATA; i++)
     {
         list->data[i] = i * 10;
@@ -181,6 +209,8 @@ void MyIniz (struct List* list)
 
 void DumpList (struct List* list)
 {
+    assert(list != nullptr);
+
     fprintf(LOG_FILE, "index: ");
     for (int i = 0; i < SIZE_DATA; i++)
     {
@@ -223,6 +253,8 @@ void DumpList (struct List* list)
 
 void Partion(FILE* file, struct List* list)
 {
+    assert(list != nullptr);
+
     fprintf(file, "\n           ");
     for (int i = 0; i < SIZE_DATA - 1; i++)
     {
@@ -232,6 +264,8 @@ void Partion(FILE* file, struct List* list)
 
 void AddingElementAfter0 (struct List* list, int value)
 {
+    assert(list != nullptr);
+
     list->data[1] = value;
     list->next[1] = 0;
     list->prev[1] = 0;
@@ -243,13 +277,56 @@ void AddingElementAfter0 (struct List* list, int value)
     DumpList(list);
 }
 
-void VerifyList (struct List* list)
+void VerifyList(struct List* list)
 {
+    assert(list != nullptr);
+
+    int* arrNext = (int*)malloc(list->size * sizeof(int));
+    CHECK_MALLOC(arrNext);
+    int* arrPrev = (int*)malloc(list->size * sizeof(int));
+    CHECK_MALLOC(arrPrev);
+
+    InitializationArr (arrNext, list->size);
+    InitializationArr (arrPrev, list->size);
+
     int i = list->head;
-    while (i != list->tail)
+    int count = 0;
+    FILL_ARRAY_FROM(arrNext, next);
+
+    i = list->tail;
+    count = 0;
+    FILL_ARRAY_FROM(arrPrev, prev);
+
+    count = 0;
+    while (count < list->size / 2)
     {
-        printf ("i = %d\n", i);
-        i = list->next[i];
+        int temp = arrPrev[count];
+        arrPrev[count] = arrPrev[list->size - 1 - count];
+        arrPrev[list->size - 1 - count] = temp;
+        count++;
     }
-    printf("-------------------------\n");
+
+    int arraysMatch = 1;
+    for (int j = 0; j < list->size; j++)
+    {
+        if (arrNext[j] != arrPrev[j])
+        {
+            arraysMatch = 0;
+            break;
+        }
+    }
+
+    if (arraysMatch)
+    {
+        fprintf(LOG_FILE, "Массивы arrNext и arrPrev совпадают.\n");
+    }
+    else
+    {
+        printf("Массивы arrNext и arrPrev не совпадают.\n");
+    }
+
+    free(arrNext);
+    free(arrPrev);
 }
+
+
