@@ -248,7 +248,7 @@ void DumpList (struct List* list)
 
 
     fprintf(LOG_FILE, "\n\nhead: [%.3d]\n", list->head);
-    fprintf(LOG_FILE, "tale: [%.3d]\n", list->tail);
+    fprintf(LOG_FILE, "tail: [%.3d]\n", list->tail);
     fprintf(LOG_FILE, "free: [%.3d]\n", list->free);
 
 }
@@ -288,7 +288,7 @@ void Verify (struct List* list)
     VERIFY_VALUE(data, == NULL, DATA);
     VERIFY_VALUE(next, == NULL, NEXT);
     VERIFY_VALUE(prev, == NULL, PREV);
-    VERIFY_VALUE(size, <= 0, SIZE);
+    VERIFY_VALUE(size, < 0, SIZE);
     VERIFY_VALUE(free, <= 0, FREE);
     VERIFY_VALUE(head, <= 0, HEAD);
     VERIFY_VALUE(tail, <= 0, TAIL);
@@ -298,7 +298,12 @@ void Verify (struct List* list)
         fprintf(LOG_FILE, "errror VerifyMeaningData\n");
         sum_errors = sum_errors | ERROR_MEANING_BIT;
     }
-    else fprintf(LOG_FILE, "массивы совпадают\n");
+    else
+    {
+        fprintf(LOG_FILE, "\n****************************************\n");
+        fprintf(LOG_FILE, "массивы совпадают\n");
+        fprintf(LOG_FILE, "****************************************\n");
+    }
 
     if (sum_errors > 0) PrintErrors(sum_errors);
 }
