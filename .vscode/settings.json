@@ -8,6 +8,9 @@
         "format": "cpp",
         "__split_buffer": "cpp",
         "vector": "cpp",
-        "string": "cpp"
+        "string": "cpp",
+        "iterator": "cpp",
+        "random": "cpp",
+        "list": "cpp"
     }
 }

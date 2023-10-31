@@ -6,6 +6,18 @@
 #include "log_funcs.h"
 #include "list.h"
 
+static void FillArrayFrom(int* prev, int* arrPrev, int i, struct List* list);
+static void InitializationArr (int* arr, int size);
+static void InitializationPrev (struct List* list);
+static void InitializationNext (struct List* list);
+
+static void Verify (struct List* list);
+static int VerifyMeaningData (struct List* list);
+static void ErrorCodes (int sum_errors);
+
+static void DumpList (struct List* list);
+static void Partion(FILE* file, struct List* list);
+
 int main()
 {
     OpenLogFile("LOGE.log", "w");
@@ -13,9 +25,6 @@ int main()
     struct List list = {};
 
     CtorList(&list);
-
-    InitializationNext (&list);
-    InitializationPrev (&list);
 
     DumpList(&list);
 
@@ -27,16 +36,18 @@ int main()
     PopElement(&list, 3);
     PopElement(&list, 5);
     PopElement(&list, 1);
+    PushElement(&list, 4, 34);
 
     Verify(&list);
+
     DtorList(&list);
 }
 
 void CtorList (struct List* list)
 {
     list->free = 1;
-    list->head = 0;
-    list->tail = 0;
+    list->head = 1;
+    list->tail = 1;
     list->size = 0;
 
     list->data = (int*)calloc(SIZE_DATA, sizeof(int));
@@ -51,8 +62,8 @@ void CtorList (struct List* list)
     InitializationArr (list->data, SIZE_DATA);
 
     list->data[0] = 0;
-    list->next[0] = 0;
-    list->prev[0] = 0;
+    list->next[0] = 1;
+    list->prev[0] = -1;
 }
 
 void DtorList (struct List* list)
@@ -80,13 +91,6 @@ void PushElement (struct List* list, int index, int value)
     assert(list != nullptr);
     assert(index >= 0 && index < SIZE_DATA);
 
-    if (index == 0)
-    {
-        AddingElementAfter0 (list, value);
-        list->size++;
-        return;
-    }
-
     int nowIndex = abs(list->free);
     list->free = abs(list->next[nowIndex]);
     list->data[nowIndex] = value;
@@ -94,7 +98,6 @@ void PushElement (struct List* list, int index, int value)
     if (index == list->tail)
     {
         list->tail = abs(nowIndex);
-
         list->next[nowIndex] = 0;
     }
     else
@@ -141,7 +144,7 @@ void PopElement (struct List* list, int index)
     DumpList(list);
 }
 
-void InitializationNext (struct List* list)
+static void InitializationNext (struct List* list)
 {
     assert(list != nullptr);
 
@@ -152,7 +155,7 @@ void InitializationNext (struct List* list)
     }
 }
 
-void InitializationPrev (struct List* list)
+static void InitializationPrev (struct List* list)
 {
     assert(list != nullptr);
 
@@ -163,7 +166,7 @@ void InitializationPrev (struct List* list)
     }
 }
 
-void InitializationArr (int* arr, int size)
+static void InitializationArr (int* arr, int size)
 {
     assert(arr != nullptr);
 
@@ -173,43 +176,7 @@ void InitializationArr (int* arr, int size)
     }
 }
 
-void MyIniz (struct List* list)
-{
-    assert(list != nullptr);
-
-    for (int i = 1; i < NOW_DATA; i++)
-    {
-        list->data[i] = i * 10;
-
-        if (i == NOW_DATA - 1)
-        {
-            list->next[i] = 0;
-            list->free = -(i + 1);
-            list->prev[i] = i - 1;
-        }
-        else if (i == 1)
-        {
-            list->prev[i] = 0;
-            list->next[i] = list->free + 1;
-            list->free++;
-        }
-        else
-        {
-            list->next[i] = list->free + 1;
-            list->prev[i] = i - 1;
-            list->free++;
-        }
-
-        printf("%d\n", list->data[i]);
-        printf("%d\n\n", list->next[i]);
-    }
-
-    list->tail = NOW_DATA - 1;
-    list->head = 1;
-    DumpList(list);
-}
-
-void DumpList (struct List* list)
+static void DumpList (struct List* list)
 {
     assert(list != nullptr);
 
@@ -253,7 +220,7 @@ void DumpList (struct List* list)
 
 }
 
-void Partion(FILE* file, struct List* list)
+static void Partion(FILE* file, struct List* list)
 {
     assert(list != nullptr);
 
@@ -264,27 +231,11 @@ void Partion(FILE* file, struct List* list)
     }
 }
 
-void AddingElementAfter0 (struct List* list, int value)
-{
-    assert(list != nullptr);
-
-    list->data[1] = value;
-    list->next[1] = 0;
-    list->prev[1] = 0;
-
-    list->head = 1;
-    list->tail = 1;
-    list->free = 2;
-
-    Verify(list);
-    DumpList(list);
-}
-
-
-void Verify (struct List* list)
+static void Verify (struct List* list)
 {
     int sum_errors = 0;
 
+    assert(list != NULL);
     VERIFY_VALUE(data, == NULL, DATA);
     VERIFY_VALUE(next, == NULL, NEXT);
     VERIFY_VALUE(prev, == NULL, PREV);
@@ -305,28 +256,35 @@ void Verify (struct List* list)
         fprintf(LOG_FILE, "****************************************\n");
     }
 
-    if (sum_errors > 0) PrintErrors(sum_errors);
+    if (sum_errors > 0) ErrorCodes(sum_errors);
 }
 
-int VerifyMeaningData (struct List* list)
+static void ErrorCodes (int sum_errors)
+{
+    PRINT_ERRORS(size, SIZE);
+    PRINT_ERRORS(data, DATA);
+    PRINT_ERRORS(next, NEXT);
+    PRINT_ERRORS(prev, PREV);
+    PRINT_ERRORS(free, FREE);
+    PRINT_ERRORS(head, HEAD);
+    PRINT_ERRORS(tail, TAIL);
+    PRINT_ERRORS(meaning, MEANING);
+}
+
+static int VerifyMeaningData (struct List* list)
 {
     int* arrNext = (int*)malloc(list->size * sizeof(int));
     CHECK_MALLOC(arrNext);
     int* arrPrev = (int*)malloc(list->size * sizeof(int));
     CHECK_MALLOC(arrPrev);
 
-    InitializationArr (arrNext, list->size);
-    InitializationArr (arrPrev, list->size);
+    InitializationArr(arrNext, list->size);
+    InitializationArr(arrPrev, list->size);
 
-    int i = list->head;
+    FillArrayFrom(list->next, arrNext, list->head, list);
+    FillArrayFrom(list->prev, arrPrev, list->tail, list);
+
     int count = 0;
-    FILL_ARRAY_FROM(arrNext, next);
-
-    i = list->tail;
-    count = 0;
-    FILL_ARRAY_FROM(arrPrev, prev);
-
-    count = 0;
     while (count < list->size / 2)
     {
         int temp = arrPrev[count];
@@ -352,15 +310,15 @@ int VerifyMeaningData (struct List* list)
     free(arrPrev);
 }
 
-void PrintErrors (int sum_errors)
+static void FillArrayFrom(int* prev, int* arrPrev, int i, struct List* list)
 {
-    PRINTERRORS(size, SIZE);
-    PRINTERRORS(data, DATA);
-    PRINTERRORS(next, NEXT);
-    PRINTERRORS(prev, PREV);
-    PRINTERRORS(free, FREE);
-    PRINTERRORS(head, HEAD);
-    PRINTERRORS(tail, TAIL);
-    PRINTERRORS(meaning, MEANING);
+    int count = 0;
+    while (i >= 0 && count < list->size)
+    {
+        arrPrev[count] = list->data[i];
+        count++;
+        i = prev[i];
+    }
 }
+
 
