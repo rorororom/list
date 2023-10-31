@@ -22,7 +22,7 @@ OBJ_DIR = obj
 
 OBJECTS = $(addprefix $(OBJ_DIR)/, $(SOURCES:%.cpp=%.o))
 
-.PHONY: all clean
+.PHONY: all clean generate_image
 
 all: $(EXECUTABLE)
 
@@ -32,6 +32,11 @@ $(EXECUTABLE): $(OBJECTS)
 $(OBJ_DIR)/%.o: %.cpp
 	$(CXX) -c $< -o $@ $(CXXFLAGS)
 
+generate_image: $(EXECUTABLE)
+	./$(EXECUTABLE)
+	dot -Tpng /Users/aleksandr/Desktop/list/grath.dot -o file.png
+
 clean:
 	rm -f $(EXECUTABLE) $(OBJECTS)
+
 

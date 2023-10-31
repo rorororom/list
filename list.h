@@ -21,6 +21,8 @@ void PushElement (struct List* list, int index, int value);
 void PopElement (struct List* list, int index);
 void DtorList (struct List* list);
 
+void GenerateImage (struct List* list);
+
 struct List {
     int *data;
     int *next;

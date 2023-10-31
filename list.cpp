@@ -6,7 +6,7 @@
 #include "log_funcs.h"
 #include "list.h"
 
-static void FillArrayFrom(int* prev, int* arrPrev, int i, struct List* list);
+static void FillArrayFrom (int* prev, int* arrPrev, int i, struct List* list);
 static void InitializationArr (int* arr, int size);
 static void InitializationPrev (struct List* list);
 static void InitializationNext (struct List* list);
@@ -16,7 +16,7 @@ static int VerifyMeaningData (struct List* list);
 static void ErrorCodes (int sum_errors);
 
 static void DumpList (struct List* list);
-static void Partion(FILE* file, struct List* list);
+static void Partion (FILE* file, struct List* list);
 
 int main()
 {
@@ -39,6 +39,7 @@ int main()
     PushElement(&list, 4, 34);
 
     Verify(&list);
+    GenerateImage(&list);
 
     DtorList(&list);
 }
@@ -135,7 +136,6 @@ void PopElement (struct List* list, int index)
 
     list->next[index] = -list->free;
     list->prev[index] = list->prev[abs(list->free)];
-
     list->data[index] = 0;
     list->free = index;
 
@@ -320,5 +320,80 @@ static void FillArrayFrom(int* prev, int* arrPrev, int i, struct List* list)
         i = prev[i];
     }
 }
+
+void GenerateImage (struct List* list)
+{
+    FILE* dotFile = fopen("grath.dot", "w");
+
+    if (dotFile)
+    {
+        fprintf(dotFile, "digraph G {\n");
+        fprintf(dotFile, "rankdir=LR;\n");
+
+        fprintf(dotFile, "subgraph cluster_addresses {\n");
+        fprintf(dotFile, "rankdir=TB;\n");
+        fprintf(dotFile, "rank=same;\n");
+
+        for (int i = 0; i < SIZE_DATA; i++)
+        {
+            fprintf(dotFile, "node%d [shape=box, label=\"Address: %d\"];\n", i, i);
+        }
+        fprintf(dotFile, "}\n");
+
+        fprintf(dotFile, "subgraph cluster_data {\n");
+        fprintf(dotFile, "rankdir=LR;\n"); 
+        fprintf(dotFile, "rank=same;\n");
+        for (int i = 0; i < SIZE_DATA; i++)
+        {
+            fprintf(dotFile, "nodeA%d [shape=record, label=\"Value: %d | Next: %d | Prev: %d\", rank=same];\n", i, list->data[i], list->next[i], list->prev[i]);
+        }
+        int cnt = 0;
+        for (int i = 0; i < list->size; i++)
+        {
+            if (list->next[cnt] >= 0)
+            {
+                fprintf(dotFile, "nodeA%d:next -> nodeA%d;\n", i, list->next[cnt]);
+            }
+            cnt = list->next[cnt];
+        }
+        fprintf(dotFile, "}\n");
+
+
+
+
+        for (int i = 0; i < SIZE_DATA; i++)
+        {
+            fprintf(dotFile, "node%d -> nodeA%d;\n", i, i);
+
+        }
+
+        for (int i = 0; i < SIZE_DATA - 1; i++)
+        {
+            fprintf(dotFile, "node%d -> node%d;\n", i, i + 1);
+        }
+
+
+        // int cnt = 0;
+        // for (int i = 0; i < list->size; i++)
+        // {
+        //     if (list->next[cnt] >= 0)
+        //     {
+        //         fprintf(dotFile, "nodeA%d:next -> nodeA%d;\n", i, list->next[cnt]);
+        //     }
+        //     cnt = list->next[cnt];
+        // }
+
+        fprintf(dotFile, "}\n");
+        fclose(dotFile);
+    }
+    else
+    {
+        fprintf(stderr, "Ошибка при открытии файла grath.dot\n");
+    }
+}
+
+
+
+
 
 
