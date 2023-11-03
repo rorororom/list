@@ -1,5 +1,5 @@
-#ifndef LOG_FUNCS
-#define LOG_FUNCS
+#ifndef LOG_FUNCS_H
+#define LOG_FUNCS_H
 
 #include <stdio.h>
 
@@ -20,4 +20,3 @@ void CloseLogFile ();
 void OpenLogFile (const char* FILE_NAME, const char* mode);
 
 #endif
- 

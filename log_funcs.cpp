@@ -8,7 +8,7 @@ FILE* LOG_FILE = stderr;
 
 void CloseLogFile ()
 {
-    fprintf (LOG_FILE, "ЗАКРЫТ ФАЙЛ\n");
+    fprintf (LOG_FILE, "FILE CLOSED\n");
     fprintf (LOG_FILE, "\\----------------------------------------------------\\\n");
     fclose (LOG_FILE);
 }
@@ -25,6 +25,7 @@ void OpenLogFile (const char* FILE_NAME, const char* mode)
     }
 
     fprintf (LOG_FILE, "\\----------------------------------------------------\\\n");
-    fprintf (LOG_FILE, "ОТКРЫТ ФАЙЛ\n");
+    fprintf (LOG_FILE, "FILE OPEN\n");
+    fprintf (LOG_FILE, "\nTime is %s\n", __TIME__);
     atexit (CloseLogFile);
 }

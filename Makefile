@@ -14,7 +14,7 @@ CXXFLAGS =  -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-
 			-fstack-protector -fstrict-overflow -fno-omit-frame-pointer -Wlarger-than=8192         \
 			-Wstack-usage=8192 -fsanitize=address -fsanitize=undefined -fPIE -Werror=vla
 
-SOURCES = list.cpp log_funcs.cpp
+SOURCES = list_address.cpp log_funcs.cpp
 OBJECTS = $(SOURCES:%.cpp=%.o)
 EXECUTABLE = list.out
 
@@ -32,9 +32,15 @@ $(EXECUTABLE): $(OBJECTS)
 $(OBJ_DIR)/%.o: %.cpp
 	$(CXX) -c $< -o $@ $(CXXFLAGS)
 
-generate_image: $(EXECUTABLE)
+run:
 	./$(EXECUTABLE)
+
+generate_image: $(EXECUTABLE)
 	dot -Tpng /Users/aleksandr/Desktop/list/grath.dot -o file.png
+
+run_and_gen_image:
+	./$(EXECUTABLE)
+	dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o file.png
 
 clean:
 	rm -f $(EXECUTABLE) $(OBJECTS)

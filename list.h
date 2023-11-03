@@ -1,3 +1,6 @@
+#ifndef LIST_H
+#define LIST_
+
 #define CHECK_MALLOC(ptr)                               \
     if (ptr == NULL) {                                  \
         printf("Ошибка выделения памяти.\n");           \
@@ -12,9 +15,11 @@
     if (sum_errors & ERROR_##SCR##_BIT)                 \
         fprintf(LOG_FILE, "error %s\n", #scr);
 
-const int SIZE_DATA = 20;
-const int NOW_DATA = 10;
+const int SIZE_DATA      = 20;
+const int NOW_DATA       = 10;
 const int WANT_COUNT_ADD = 10;
+const int FREE_ELEMENT   = -1;
+const int ZERO_ELEMENT   = 0;
 
 void CtorList (struct List* list);
 void PushElement (struct List* list, int index, int value);
@@ -28,8 +33,6 @@ struct List {
     int *next;
     int *prev;
     int free;
-    int head;
-    int tail;
     int size;
 };
 
@@ -43,4 +46,4 @@ enum ListErrors {
     ERROR_SIZE_BIT    = 1 << 7,
     ERROR_MEANING_BIT = 1 << 8
 };
-
+#endif

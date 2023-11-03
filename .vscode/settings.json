@@ -11,6 +11,10 @@
         "string": "cpp",
         "iterator": "cpp",
         "random": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "array": "cpp",
+        "span": "cpp",
+        "string_view": "cpp",
+        "list_address": "cpp"
     }
 }

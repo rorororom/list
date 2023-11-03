@@ -6,22 +6,70 @@
 #include <time.h>
 
 #include "log_funcs.h"
-#include "list.h"
+
+#define VERIFY_VALUE(scr, operation, SCR)               \
+    if (list->scr operation) {                          \
+        sum_errors = sum_errors | ERROR_##SCR##_BIT;    \
+    }
+
+#define CHECK_MALLOC(ptr)                               \
+    if (ptr == NULL) {                                  \
+        printf("Ошибка выделения памяти.\n");           \
+    }
+
+#define PRINT_ERRORS(scr, SCR)                          \
+    if (sum_errors & ERROR_##SCR##_BIT)                 \
+        fprintf(LOG_FILE, "error %s\n", #scr);
+
+enum ListErrors {
+    ERROR_DATA_BIT    = 1,
+    ERROR_NEXT_BIT    = 1 << 2,
+    ERROR_PREV_BIT    = 1 << 3,
+    ERROR_FREE_BIT    = 1 << 4,
+    ERROR_HEAD_BIT    = 1 << 5,
+    ERROR_TAIL_BIT    = 1 << 6,
+    ERROR_SIZE_BIT    = 1 << 7,
+    ERROR_MEANING_BIT = 1 << 8
+};
+
+const int SIZE_DATA      = 20;
+const int NOW_DATA       = 10;
+const int WANT_COUNT_ADD = 10;
+const int FREE_ELEMENT   = -1;
+const int ZERO_ELEMENT   = 0;
+
+struct Node {
+    int data;
+    int next;
+    int prev;
+};
+
+struct List {
+    Node data[SIZE_DATA];
+    int free;
+    int size;
+};
 
 char count_gr[] = "1";
 static int cntGraph = 0;
 
-static void FillArrayFrom (int* prev, int* arrPrev, int i, struct List* list);
-static void InitializationArr (int* arr, int size);
-static void InitializationPrev (struct List* list);
-static void InitializationNext (struct List* list);
+void CtorList(struct List* list);
+void DtorList (struct List* list);
+void PushElement (struct List* list, int index, int value);
+void PopElement (struct List* list, int index);
 
-int GetHead(struct List* list);
-int GetTail(struct List* list);
+static void Partion(FILE* file, struct List* list);
+static void DumpList (struct List* list);
+
+static int GetHead(struct List* list);
+static int GetTail(struct List* list);
 
 static void Verify (struct List* list);
 static int VerifyMeaningData (struct List* list);
 static void ErrorCodes (int sum_errors);
+
+static void FillArrayFromNext(int* arrPrev, int i, struct List* list);
+static void FillArrayFromPrev(int* arrPrev, int i, struct List* list);
 
 static void DumpList (struct List* list);
 static void Partion (FILE* file, struct List* list);
@@ -34,6 +82,7 @@ int main()
     OpenLogFile("LOGE.log", "w");
 
     struct List list = {};
+    struct Node node = {};
 
     CtorList(&list);
 
@@ -44,44 +93,28 @@ int main()
         PushElement(&list, i, 10 * (i+1));
     }
 
-    PopElement(&list, 3);
-    PopElement(&list, 5);
-    PopElement(&list, 1);
-    PushElement(&list, 4, 34);
-    PopElement(&list, 2);
-    PushElement(&list, 1, 18);
-    PushElement(&list, 2, 25);
-    PushElement(&list, 4, 41);
-    PopElement(&list, 4);
-    PushElement(&list, 3, 25);
-    PushElement(&list, 10, 25);
-
-
-    Verify(&list);
-    GenerateImage(&list);
+    PopElement(&list, 3); 
 
     DtorList(&list);
 }
 
-void CtorList (struct List* list)
+
+void CtorList(struct List* list)
 {
+    assert(list != NULL);
     list->free = 1;
     list->size = 0;
 
-    list->data = (int*)calloc(SIZE_DATA, sizeof(int));
-    CHECK_MALLOC(list->data);
-    list->next = (int*)calloc(SIZE_DATA, sizeof(int));
-    CHECK_MALLOC(list->next);
-    list->prev = (int*)calloc(SIZE_DATA, sizeof(int));
-    CHECK_MALLOC(list->prev);
+    list->data[0].prev = 0;
+    list->data[0].data = 0;
+    list->data[0].next = 0;
 
-    InitializationNext (list);
-    InitializationPrev (list);
-    InitializationArr (list->data, SIZE_DATA);
-
-    list->data[0] = ZERO_ELEMENT;
-    list->next[0] = 0;
-    list->prev[0] = 0;
+    for (int i = 1; i < SIZE_DATA; i++) {
+        if (i == SIZE_DATA - 1)
+            list->data[i].next = FREE_ELEMENT;
+        else
+            list->data[i].next = -(i + 1);
+    }
 }
 
 void DtorList (struct List* list)
@@ -89,14 +122,10 @@ void DtorList (struct List* list)
     assert(list != nullptr);
     for (int i = 0; i < SIZE_DATA; i++)
     {
-        list->data[i] = ZERO_ELEMENT;
-        list->next[i] = ZERO_ELEMENT;
-        list->prev[i] = ZERO_ELEMENT;
+        list->data[i].data = ZERO_ELEMENT;
+        list->data[i].next = ZERO_ELEMENT;
+        list->data[i].prev = ZERO_ELEMENT;
     }
-
-    free(list->data);
-    free(list->next);
-    free(list->prev);
 
     list->free = FREE_ELEMENT;
     list->size = FREE_ELEMENT;
@@ -108,19 +137,18 @@ void PushElement (struct List* list, int index, int value)
     assert(index >= ZERO_ELEMENT && index < SIZE_DATA);
 
     int nowIndex = abs(list->free);
-    list->free = abs(list->next[nowIndex]);
-    list->data[nowIndex] = value;
+    list->free = abs(list->data[nowIndex].next);
+    list->data[nowIndex].data = value;
 
-    list->next[nowIndex] = list->next[index];
-    list->prev[list->next[nowIndex]] = nowIndex;
-    list->next[index] = nowIndex; //следующий элемент индекса, это индекс нового элемента
-    list->prev[nowIndex] = index; //предыдущий элемент для нового это индекс
+    list->data[nowIndex].next = list->data[index].next;
+    list->data[list->data[nowIndex].next].prev = nowIndex;
+    list->data[index].next = nowIndex;
+    list->data[nowIndex].prev = index;
 
     list->size++;
-    Verify(list);
+    //Verify(list);
     DumpList(list);
     //CreateNewGraph();
-    return;
 }
 
 void PopElement (struct List* list, int index)
@@ -128,49 +156,27 @@ void PopElement (struct List* list, int index)
     assert(index >= ZERO_ELEMENT && index < SIZE_DATA);
     assert(list != nullptr);
 
-    list->prev[list->next[index]] = list->prev[index];
-    list->next[list->prev[index]] = list->next[index];
+    list->data[list->data[index].next].prev = list->data[index].prev;
+    list->data[list->data[index].prev].next = list->data[index].next;
 
-    list->next[index] = -list->free;
-    list->prev[index] = list->prev[abs(list->free)];
-    list->data[index] = ZERO_ELEMENT;
+    list->data[index].next = -list->free;
+    list->data[index].prev = list->data[abs(list->free)].prev;
+    list->data[index].data = ZERO_ELEMENT;
     list->free = index;
 
     list->size--;
-    Verify(list);
+    //Verify(list);
     DumpList(list);
 }
 
-static void InitializationNext (struct List* list)
+static int GetHead(struct List* list)
 {
-    assert(list != nullptr);
-
-    for (int i = 1; i < SIZE_DATA; i++)
-    {
-        if (i == SIZE_DATA - 1) list->next[i] = FREE_ELEMENT;
-        else list->next[i] =  -(i+1);
-    }
+    return list->data[0].next;
 }
 
-static void InitializationPrev (struct List* list)
+static int GetTail(struct List* list)
 {
-    assert(list != nullptr);
-
-    for (int i = 1; i < SIZE_DATA; i++)
-    {
-        if (i == 1) list->prev[i] = ZERO_ELEMENT;
-        else list->prev[i] = FREE_ELEMENT;
-    }
-}
-
-static void InitializationArr (int* arr, int size)
-{
-    assert(arr != nullptr);
-
-    for (int i = 0; i < size; i++)
-    {
-        arr[i] = ZERO_ELEMENT;
-    }
+    return list->data[0].prev;
 }
 
 static void DumpList (struct List* list)
@@ -188,7 +194,7 @@ static void DumpList (struct List* list)
     fprintf(LOG_FILE, "\ndata: ");
     for (int i = 0; i < SIZE_DATA; i++)
     {
-        fprintf(LOG_FILE, " %.3d |", list->data[i]);
+        fprintf(LOG_FILE, " %.3d |", list->data[i].data);
     }
 
     Partion(LOG_FILE, list);
@@ -196,8 +202,8 @@ static void DumpList (struct List* list)
     fprintf(LOG_FILE, "\nnext: ");
     for (int i = 0; i < SIZE_DATA; i++)
     {
-        if (list->next[i] < 0) fprintf(LOG_FILE, "%.3d |", list->next[i]);
-        else fprintf(LOG_FILE, " %.3d |", list->next[i]);
+        if (list->data[i].next < 0) fprintf(LOG_FILE, "%.3d |", list->data[i].next);
+        else fprintf(LOG_FILE, " %.3d |", list->data[i].next);
     }
 
     Partion(LOG_FILE, list);
@@ -205,8 +211,8 @@ static void DumpList (struct List* list)
     fprintf(LOG_FILE, "\nprev: ");
     for (int i = 0; i < SIZE_DATA; i++)
     {
-        if (list->prev[i] < ZERO_ELEMENT) fprintf(LOG_FILE, "%.3d |", list->prev[i]);
-        else fprintf(LOG_FILE, " %.3d |", list->prev[i]);
+        if (list->data[i].prev < ZERO_ELEMENT) fprintf(LOG_FILE, "%.3d |", list->data[i].prev);
+        else fprintf(LOG_FILE, " %.3d |", list->data[i].prev);
     }
     Partion(LOG_FILE, list);
 
@@ -234,8 +240,6 @@ static void Verify (struct List* list)
 
     assert(list != NULL);
     VERIFY_VALUE(data, == NULL, DATA);
-    VERIFY_VALUE(next, == NULL, NEXT);
-    VERIFY_VALUE(prev, == NULL, PREV);
     VERIFY_VALUE(size, < ZERO_ELEMENT, SIZE);
     VERIFY_VALUE(free, <= ZERO_ELEMENT, FREE);
 
@@ -271,11 +275,8 @@ static int VerifyMeaningData (struct List* list)
     int* arrPrev = (int*)malloc(list->size * sizeof(int));
     CHECK_MALLOC(arrPrev);
 
-    InitializationArr(arrNext, list->size);
-    InitializationArr(arrPrev, list->size);
-
-    FillArrayFrom(list->next, arrNext, GetHead(list), list);
-    FillArrayFrom(list->prev, arrPrev, GetTail(list), list);
+    FillArrayFromNext(arrNext, GetHead(list), list);
+    FillArrayFromPrev(arrPrev, GetTail(list), list);
 
     int count = 0;
     while (count < list->size / 2)
@@ -303,14 +304,25 @@ static int VerifyMeaningData (struct List* list)
     free(arrPrev);
 }
 
-static void FillArrayFrom(int* prev, int* arrPrev, int i, struct List* list)
+static void FillArrayFromNext(int* arrPrev, int i, struct List* list)
 {
     int count = 0;
     while (i >= ZERO_ELEMENT && count < list->size)
     {
-        arrPrev[count] = list->data[i];
+        arrPrev[count] = list->data[i].data;
         count++;
-        i = prev[i];
+        i = list->data[i].next;
+    }
+}
+
+static void FillArrayFromPrev(int* arrPrev, int i, struct List* list)
+{
+    int count = 0;
+    while (i >= ZERO_ELEMENT && count < list->size)
+    {
+        arrPrev[count] = list->data[i].data;
+        count++;
+        i = list->data[i].prev;
     }
 }
 
@@ -333,7 +345,7 @@ void GenerateImage (struct List* list)
             {
                 CreateNode(dotFile, i, "#d5a1a7", list);
             }
-            else if (list->next[i] < ZERO_ELEMENT || (i == SIZE_DATA - 1 && list->next[i] == FREE_ELEMENT))
+            else if (list->data[i].next < ZERO_ELEMENT || (i == SIZE_DATA - 1 && list->data[i].next == FREE_ELEMENT))
             {
                 CreateNode(dotFile, i, "#6495ed", list);
             }
@@ -350,15 +362,15 @@ void GenerateImage (struct List* list)
         fprintf(dotFile, "%d[weight = 1000000, color = \"#fff5ee\"];\n", SIZE_DATA - 1);
 
         for(int i = 0; i < SIZE_DATA - 1; i++) {
-            if (list->next[i] >= ZERO_ELEMENT)
+            if (list->data[i].next >= ZERO_ELEMENT)
             {
-                fprintf(dotFile, "\t%d->%d[color = \"#1f0932\", slipnes = ortho, constraint=false];\n", i, list->next[i]);
+                fprintf(dotFile, "\t%d->%d[color = \"#1f0932\", slipnes = ortho, constraint=false];\n", i, list->data[i].next);
             }
         }
 
         for (int i = 0; i < SIZE_DATA; i++) {
-            if (list->prev[i] != FREE_ELEMENT) {
-                fprintf(dotFile, "\t %d -> %d[style = dashed, color = \"#997caf\", slipnes = ortho];\n", i, list->prev[i]);
+            if (list->data[i].prev != FREE_ELEMENT) {
+                fprintf(dotFile, "\t %d -> %d[style = dashed, color = \"#997caf\", slipnes = ortho];\n", i, list->data[i].prev);
             }
         }
 
@@ -386,38 +398,21 @@ static void CreateNode(FILE* dotFile, int index, const char* fillColor, struct L
                                                 data: %d |\
                                                 next: %d |\
                                                 prev: %d\" ];\n",
-            index, fillColor, index, list->data[index], list->next[index], list->prev[index]);
+            index, fillColor, index, list->data[index].data, list->data[index].next, list->data[index].prev);
 }
 
-void CreateNewGraph()
-{
-    time_t now = time(NULL);
-    struct tm* timeinfo = localtime(&now);
-
-    char filename[100];
-    sprintf(filename, "grath_%04d-%02d-%02d_%02d-%02d-%02d.png",
-            timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,
-            timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-
-    char command[1000];
-    sprintf(command, "dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o /Users/aleksandr/Desktop/list/grapths/%s", filename);
-    system(command);
-}
-
-int GetHead(struct List* list)
-{
-    return list->next[0];
-}
-
-int GetTail(struct List* list)
-{
-    return list->prev[0];
-}
-
-
-
-
-
-
-
+// void CreateNewGraph()
+// {
+//     time_t now = time(NULL);
+//     struct tm* timeinfo = localtime(&now);
+//
+//     char filename[100];
+//     sprintf(filename, "grath_%04d-%02d-%02d_%02d-%02d-%02d.png",
+//             timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,
+//             timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+//
+//     char command[1000];
+//     sprintf(command, "dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o /Users/aleksandr/Desktop/list/grapths/%s", filename);
+//     system(command);
+// }
 
