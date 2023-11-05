@@ -30,19 +30,26 @@ const int FREE_ELEMENT   = -1;
 const int ZERO_ELEMENT   = 0;
 
 struct Node {
-    int data;
-    int next;
-    int prev;
+    int value;
+    Node* next;
+    Node* prev;
 };
 
 struct List {
-    Node data[SIZE_DATA];
-    int free;
+    Node* end;
     int size;
 };
 
 void CtorList(struct List* list);
-void DtorList (struct List* list);
-void PushElement (struct List* list, int index, int value);
-void PopElement (struct List* list, int index);
+void DtorList(List* list);
+void PushElement(List* list, Node* armature, int value, Node** insertedValPtr);
+void PopElement(List* list, Node* armature);
+
+void Partion(FILE* file, struct List* list);
+void DumpList (struct List* list);
+
+void CreateNode(FILE* dotFile, Node* id, const int value,
+                               Node* next, Node* prev);
+void GenerateImage (struct List* list);
+void CreateNewGraph();
 

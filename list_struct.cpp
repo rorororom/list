@@ -11,180 +11,198 @@
 char count_gr[] = "1";
 static int cntGraph = 0;
 
-static void Partion(FILE* file, struct List* list);
-static void DumpList (struct List* list);
-
-static int GetHead(struct List* list);
-static int GetTail(struct List* list);
-
 static void Verify (struct List* list);
 static int VerifyMeaningData (struct List* list);
 static void ErrorCodes (int sum_errors);
 
-static void FillArrayFromNext(int* arrPrev, int i, struct List* list);
-static void FillArrayFromPrev(int* arrPrev, int i, struct List* list);
-
-static void DumpList (struct List* list);
-static void Partion (FILE* file, struct List* list);
-
-static void CreateNode(FILE* dotFile, int index, const char* fillColor, struct List* list);
-static void CreateNewGraph();
-
-int main()
-{
-    OpenLogFile("LOGE.log", "w");
-
-    struct List list = {};
-    struct Node node = {};
-
-    CtorList(&list);
-
-    DumpList(&list);
-
-    for (int i = 0; i < WANT_COUNT_ADD; i++)
-    {
-        PushElement(&list, i, 10 * (i+1));
-    }
-
-    PopElement(&list, 3);
-
-    DtorList(&list);
-}
-
+static void ListElemCtor(Node** elem);
+static void ListElemInit(Node* elem, int value, Node* prev, Node* next);
+static void ListElemDtor(Node* elem);
+Node* GetHead(List* list);
+Node* GetTail(List* list);
 
 void CtorList(struct List* list)
 {
-    assert(list != NULL);
-    list->free = 1;
+    assert(list);
+
+    Node* zeroElement = nullptr;
+    ListElemCtor(&zeroElement);
+
+    list->end = zeroElement;
     list->size = 0;
-
-    list->data[0].prev = 0;
-    list->data[0].data = 0;
-    list->data[0].next = 0;
-
-    for (int i = 1; i < SIZE_DATA; i++) {
-        if (i == SIZE_DATA - 1)
-            list->data[i].next = FREE_ELEMENT;
-        else
-            list->data[i].next = -(i + 1);
-    }
 }
 
-void DtorList (struct List* list)
+static void ListElemCtor(Node** elem)
 {
-    assert(list != nullptr);
-    for (int i = 0; i < SIZE_DATA; i++)
+    assert(elem);
+
+    *elem = (Node*)calloc(1, sizeof(**elem));
+
+    if (elem == nullptr)
+        printf("error memory limit\n");
+
+    (*elem)->value = ZERO_ELEMENT;
+    (*elem)->next  = *elem;
+    (*elem)->prev  = *elem;
+}
+
+void DtorList(List* list)
+{
+    assert(list);
+
+    Node* listHead = GetHead(list);
+    Node* listTail  = GetTail(list);
+
+    while (listHead != listTail)
     {
-        list->data[i].data = ZERO_ELEMENT;
-        list->data[i].next = ZERO_ELEMENT;
-        list->data[i].prev = ZERO_ELEMENT;
+        Node* NNNode = listHead;
+
+        listHead = listHead->next;
+
+        ListElemDtor(NNNode);
     }
 
-    list->free = FREE_ELEMENT;
-    list->size = FREE_ELEMENT;
+    ListElemDtor(list->end);
+    list->end = nullptr;
 }
 
-void PushElement (struct List* list, int index, int value)
+void PushElement(List* list, Node* armature, int value, Node** insertedValPtr)
 {
-    assert(list != nullptr);
-    assert(index >= ZERO_ELEMENT && index < SIZE_DATA);
+    assert(list);
+    assert(armature);
+    assert(insertedValPtr);
 
-    int nowIndex = abs(list->free);
-    list->free = abs(list->data[nowIndex].next);
-    list->data[nowIndex].data = value;
+    Node* newNode = nullptr;
+    ListElemCtor(&newNode);
 
-    list->data[nowIndex].next = list->data[index].next;
-    list->data[list->data[nowIndex].next].prev = nowIndex;
-    list->data[index].next = nowIndex;
-    list->data[nowIndex].prev = index;
+    *insertedValPtr = newNode;
+
+    ListElemInit(newNode, value, armature, armature->next);
+    armature->next->prev = newNode;
+    armature->next       = newNode;
 
     list->size++;
-    //Verify(list);
     DumpList(list);
-    //CreateNewGraph();
+
+    GenerateImage(list);
+    CreateNewGraph();
 }
 
-void PopElement (struct List* list, int index)
+
+static void ListElemInit(Node* elem, int value, Node* prev, Node* next)
 {
-    assert(index >= ZERO_ELEMENT && index < SIZE_DATA);
-    assert(list != nullptr);
+    assert(elem);
 
-    list->data[list->data[index].next].prev = list->data[index].prev;
-    list->data[list->data[index].prev].next = list->data[index].next;
+    elem->value = value;
+    elem->prev  = prev;
+    elem->next  = next;
+}
 
-    list->data[index].next = -list->free;
-    list->data[index].prev = list->data[abs(list->free)].prev;
-    list->data[index].data = ZERO_ELEMENT;
-    list->free = index;
+void PopElement(List* list, Node* armature)
+{
+    assert(list);
+    assert(armature);
+
+    armature->prev->next = armature->next;
+    armature->next->prev = armature->prev;
+
+    ListElemInit(armature, ZERO_ELEMENT, nullptr, nullptr);
 
     list->size--;
-    //Verify(list);
+
     DumpList(list);
+
+    GenerateImage(list);
+    CreateNewGraph();
 }
 
-static int GetHead(struct List* list)
+static void ListElemDtor(Node* elem)
 {
-    return list->data[0].next;
+    assert(elem);
+
+    elem->next  = elem->prev = nullptr;
+    elem->value = ZERO_ELEMENT;
+
+    free(elem);
 }
 
-static int GetTail(struct List* list)
+Node* GetHead(List* list)
 {
-    return list->data[0].prev;
+    assert(list);
+    assert(list->end);
+
+    return list->end->next;
 }
 
-static void DumpList (struct List* list)
+Node* GetTail(List* list)
+{
+    assert(list);
+    assert(list->end);
+
+    return list->end->prev;
+}
+
+void DumpList (struct List* list)
+{
+    assert(list);
+
+    fprintf(LOG_FILE, "<table border='1'>\n");
+
+    int i = 0;
+    fprintf(LOG_FILE, "\t<tr>\n");
+    fprintf(LOG_FILE, "\t\t<td>index</td>\n", i);
+    for (Node* listElem = GetHead(list); listElem != list->end; listElem = listElem->next)
+    {
+        fprintf(LOG_FILE, "\t\t<td>%d</td>\n", i);
+        i++;
+    }
+    fprintf(LOG_FILE, "\t</tr>\n");
+
+    fprintf(LOG_FILE, "\t<tr>\n");
+    fprintf(LOG_FILE, "\t\t<td>ip</td>\n", i);
+    for (Node* listElem = GetHead(list); listElem != list->end; listElem = listElem->next)
+    {
+        fprintf(LOG_FILE, "\t\t<td>%p</td>\n", listElem);
+    }
+    fprintf(LOG_FILE, "\t</tr>\n");
+
+    fprintf(LOG_FILE, "\t<tr>\n");
+    fprintf(LOG_FILE, "\t\t<th>data</th>\n");
+    for (Node* listElem = GetHead(list); listElem != list->end; listElem = listElem->next)
+    {
+        fprintf(LOG_FILE, "\t\t<td>%d</td>\n", listElem->value);
+    }
+    fprintf(LOG_FILE, "\t</tr>\n");
+
+    fprintf(LOG_FILE, "\t<tr>\n");
+    fprintf(LOG_FILE, "\t\t<th>next</th>\n");
+    for (Node* listElem = GetHead(list); listElem != list->end; listElem = listElem->next)
+    {
+        fprintf(LOG_FILE, "\t\t<td>%p</td>\n", listElem->next);
+    }
+    fprintf(LOG_FILE, "\t</tr>\n");
+
+    fprintf(LOG_FILE, "\t<tr>\n");
+    fprintf(LOG_FILE, "\t\t<th>prev</th>\n");
+    for (Node* listElem = GetHead(list); listElem != list->end; listElem = listElem->next)
+    {
+        fprintf(LOG_FILE, "\t\t<td>%p</td>\n", listElem->prev);
+    }
+    fprintf(LOG_FILE, "\t</tr>\n");
+
+    fprintf(LOG_FILE, "</table>\n");
+}
+
+void Partion(FILE* file, struct List* list)
 {
     assert(list != nullptr);
 
-    fprintf(LOG_FILE, "index: ");
-    for (int i = 0; i < SIZE_DATA; i++)
-    {
-        fprintf(LOG_FILE, "%.3d_|_", i);
-    }
-
-    Partion(LOG_FILE, list);
-
-    fprintf(LOG_FILE, "\ndata: ");
-    for (int i = 0; i < SIZE_DATA; i++)
-    {
-        fprintf(LOG_FILE, " %.3d |", list->data[i].data);
-    }
-
-    Partion(LOG_FILE, list);
-
-    fprintf(LOG_FILE, "\nnext: ");
-    for (int i = 0; i < SIZE_DATA; i++)
-    {
-        if (list->data[i].next < 0) fprintf(LOG_FILE, "%.3d |", list->data[i].next);
-        else fprintf(LOG_FILE, " %.3d |", list->data[i].next);
-    }
-
-    Partion(LOG_FILE, list);
-
-    fprintf(LOG_FILE, "\nprev: ");
-    for (int i = 0; i < SIZE_DATA; i++)
-    {
-        if (list->data[i].prev < ZERO_ELEMENT) fprintf(LOG_FILE, "%.3d |", list->data[i].prev);
-        else fprintf(LOG_FILE, " %.3d |", list->data[i].prev);
-    }
-    Partion(LOG_FILE, list);
-
-
-    fprintf(LOG_FILE, "\n\nhead: [%.3d]\n", GetHead(list));
-    fprintf(LOG_FILE, "tail: [%.3d]\n", GetTail(list));
-    fprintf(LOG_FILE, "free: [%.3d]\n", list->free);
-
-}
-
-static void Partion(FILE* file, struct List* list)
-{
-    assert(list != nullptr);
-
-    fprintf(file, "\n           ");
+    fprintf(file, "<br>\n");
     for (int i = 0; i < SIZE_DATA - 1; i++)
     {
-        fprintf(file, "|_____");
+        fprintf(file, "|________________");
     }
+    fprintf(file, "<br>\n");
 }
 
 static void Verify (struct List* list)
@@ -192,11 +210,12 @@ static void Verify (struct List* list)
     int sum_errors = 0;
 
     assert(list != NULL);
-    VERIFY_VALUE(data, == NULL, DATA);
-    VERIFY_VALUE(size, < ZERO_ELEMENT, SIZE);
-    VERIFY_VALUE(free, <= ZERO_ELEMENT, FREE);
+    if (list->size > SIZE_DATA)
+    {
+        sum_errors = sum_errors | ERROR_SIZE_BIT;
+    }
 
-    if (VerifyMeaningData (list))
+    if (VerifyMeaningData(list))
     {
         fprintf(LOG_FILE, "errror VerifyMeaningData\n");
         sum_errors = sum_errors | ERROR_MEANING_BIT;
@@ -214,74 +233,33 @@ static void Verify (struct List* list)
 static void ErrorCodes (int sum_errors)
 {
     PRINT_ERRORS(size, SIZE);
-    PRINT_ERRORS(data, DATA);
-    PRINT_ERRORS(next, NEXT);
-    PRINT_ERRORS(prev, PREV);
-    PRINT_ERRORS(free, FREE);
     PRINT_ERRORS(meaning, MEANING);
 }
 
-static int VerifyMeaningData (struct List* list)
+int VerifyMeaningData(struct List* list)
 {
-    int* arrNext = (int*)malloc(list->size * sizeof(int));
-    CHECK_MALLOC(arrNext);
-    int* arrPrev = (int*)malloc(list->size * sizeof(int));
-    CHECK_MALLOC(arrPrev);
+    Node* currentNode = GetHead(list);
+    Node* tailNode = GetTail(list);
 
-    FillArrayFromNext(arrNext, GetHead(list), list);
-    FillArrayFromPrev(arrPrev, GetTail(list), list);
-
-    int count = 0;
-    while (count < list->size / 2)
+    while (currentNode != NULL && tailNode != NULL)
     {
-        int temp = arrPrev[count];
-        arrPrev[count] = arrPrev[list->size - 1 - count];
-        arrPrev[list->size - 1 - count] = temp;
-        count++;
-    }
-
-    int arraysMatch = 0;
-    for (int j = 0; j < list->size; j++)
-    {
-        if (arrNext[j] != arrPrev[j])
+        if (currentNode->value != tailNode->value)
         {
-            arraysMatch = 1;
-            break;
+            return 1; // Данные не соответствуют ожиданиям
         }
+        currentNode = currentNode->next;
+        tailNode = tailNode->prev;
     }
 
-    if (arraysMatch == 0) return 0;
-    else return 1;
-
-    free(arrNext);
-    free(arrPrev);
-}
-
-static void FillArrayFromNext(int* arrPrev, int i, struct List* list)
-{
-    int count = 0;
-    while (i >= ZERO_ELEMENT && count < list->size)
-    {
-        arrPrev[count] = list->data[i].data;
-        count++;
-        i = list->data[i].next;
-    }
-}
-
-static void FillArrayFromPrev(int* arrPrev, int i, struct List* list)
-{
-    int count = 0;
-    while (i >= ZERO_ELEMENT && count < list->size)
-    {
-        arrPrev[count] = list->data[i].data;
-        count++;
-        i = list->data[i].prev;
-    }
+    return 0; // Данные в порядке
 }
 
 void GenerateImage (struct List* list)
 {
     FILE* dotFile = fopen("grapth.dot", "w");
+
+    Node* elem = list->end;
+    int elem_amt = list->size + 1;
 
     if (dotFile)
     {
@@ -289,51 +267,45 @@ void GenerateImage (struct List* list)
         fprintf(dotFile, "\trankdir=LR;\n");
         fprintf(dotFile, "\tgraph [bgcolor=\"#fff5ee\"]\n");
         fprintf(dotFile, "\tnode[color=\"#b02f15\",fontsize=14];\n");
-        fprintf(dotFile, "slipnes = ortho\n");
+        fprintf(dotFile, "splines = ortho;\n");
+
         fprintf(dotFile, "\tedge[fontsize=22];\n\n\n");
 
-        for (int i = 0; i < SIZE_DATA; i++)
+        CreateNode(dotFile, list->end, list->end->value, list->end->next, list->end->prev);
+        fprintf(dotFile, "%d -> %d[weight = 1000000, color = \"#fff5ee\"];\n", list->end, list->end->next);
+
+        Node* listTail = GetTail(list);
+        for (Node* listElem =GetHead(list); listElem != listTail; listElem = listElem->next)
         {
-            if (i == ZERO_ELEMENT)
-            {
-                CreateNode(dotFile, i, "#d5a1a7", list);
-            }
-            else if (list->data[i].next < ZERO_ELEMENT || (i == SIZE_DATA - 1 && list->data[i].next == FREE_ELEMENT))
-            {
-                CreateNode(dotFile, i, "#6495ed", list);
-            }
-            else
-            {
-                CreateNode(dotFile, i, "#bba6cd", list);
-            }
-        }
-        fprintf(dotFile, "\n\t");
-
-        for (int i = 0; i < SIZE_DATA - 1; i++) {
-            fprintf(dotFile, "%d->", i);
-        }
-        fprintf(dotFile, "%d[weight = 1000000, color = \"#fff5ee\"];\n", SIZE_DATA - 1);
-
-        for(int i = 0; i < SIZE_DATA - 1; i++) {
-            if (list->data[i].next >= ZERO_ELEMENT)
-            {
-                fprintf(dotFile, "\t%d->%d[color = \"#1f0932\", slipnes = ortho, constraint=false];\n", i, list->data[i].next);
-            }
+            CreateNode(dotFile, listElem, listElem->value, listElem->next, listElem->prev);
+            fprintf(dotFile, "%d -> %d[weight = 1000000, color = \"#fff5ee\"];\n", listElem, listElem->next);
         }
 
-        for (int i = 0; i < SIZE_DATA; i++) {
-            if (list->data[i].prev != FREE_ELEMENT) {
-                fprintf(dotFile, "\t %d -> %d[style = dashed, color = \"#997caf\", slipnes = ortho];\n", i, list->data[i].prev);
-            }
+        CreateNode(dotFile, listTail, listTail->value, listTail->next, listTail->prev);
+
+        Node* nownow = list->end;
+        for(int i = 0; i < list->size + 1; i++)
+        {
+            fprintf(dotFile, "\t%d->%d[color = \"#1f0932\", slipnes = ortho];\n", nownow, nownow->next);
+            nownow = nownow->next;
         }
 
-    fprintf(dotFile, "\thead [shape=oval, style=filled, color=\"#310062\", fillcolor=\"#fff0f5\", label=\"HEAD\" ];\n");
-    fprintf(dotFile, "\ttail [shape=oval, style=filled, color=\"#310062\", fillcolor=\"#fff0f5\", label=\"TAIL\" ];\n");
-    fprintf(dotFile, "\tfree [shape=oval, style=filled, color=\"#310062\", fillcolor=\"#fff0f5\", label=\"FREE\" ];\n");
-    fprintf(dotFile, "\thead->%d[color = \"#f1829d\"];\n", GetHead(list));
-    fprintf(dotFile, "\ttail->%d[color = \"#f1829d\"];\n", GetTail(list));
-    fprintf(dotFile, "\tfree->%d[color = \"#f1829d\"];\n", list->free);
-    fprintf(dotFile, "\n}");
+        nownow = list->end;
+        for(int i = 0; i < list->size + 1; i++)
+        {
+            fprintf(dotFile, "\t%d->%d[color = \"#997caf\", slipnes = ortho];\n", nownow, nownow->prev);
+            nownow = nownow->prev;
+        }
+
+
+        Node* Head = GetHead(list);
+        Node* Tail = GetTail(list);
+
+        fprintf(dotFile, "\thead [shape=oval, style=filled, color=\"#310062\", fillcolor=\"#fff0f5\", label=\"HEAD\" ];\n");
+        fprintf(dotFile, "\ttail [shape=oval, style=filled, color=\"#310062\", fillcolor=\"#fff0f5\", label=\"TAIL\" ];\n");
+        fprintf(dotFile, "\thead->%d[color = \"#f1829d\"];\n", Head);
+        fprintf(dotFile, "\ttail->%d[color = \"#f1829d\"];\n", Tail);
+        fprintf(dotFile, "\n}");
         fclose(dotFile);
     }
     else
@@ -342,30 +314,36 @@ void GenerateImage (struct List* list)
     }
 }
 
-static void CreateNode(FILE* dotFile, int index, const char* fillColor, struct List* list)
+void CreateNode(FILE* dotFile, Node* id, const int value,
+                               Node* next, Node* prev)
 {
-    fprintf(dotFile, "%d [shape=record, style=\"filled,rounded\",\
-                            color=\"#552d7b\", fillcolor=\"%s\",\
-                            fontsize=14, label=\"\
-                                                ip:   %d |\
-                                                data: %d |\
-                                                next: %d |\
-                                                prev: %d\" ];\n",
-            index, fillColor, index, list->data[index].data, list->data[index].next, list->data[index].prev);
+    fprintf(dotFile, "%d"
+                        "[shape=Mrecord, style=filled, fillcolor=\"#bba6cd\","
+                        "label=\" id: %p |"
+                              "value: %d  |"
+                          "<f0> next: %p |"
+                          "<f1> prev: %p \","
+                        "color = \"#552d7b\"];\n",
+                        id, id,
+                        value,
+                        next, prev);
 }
 
-// void CreateNewGraph()
-// {
-//     time_t now = time(NULL);
-//     struct tm* timeinfo = localtime(&now);
-//
-//     char filename[100];
-//     sprintf(filename, "grath_%04d-%02d-%02d_%02d-%02d-%02d.png",
-//             timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,
-//             timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
-//
-//     char command[1000];
-//     sprintf(command, "dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o /Users/aleksandr/Desktop/list/grapths/%s", filename);
-//     system(command);
-// }
+static int imageCounter = 0;
+#include "stb_image.h"
 
+void CreateNewGraph()
+{
+    char filename[100];
+    sprintf(filename, "grath_%04d.png", imageCounter);
+
+    char command[1000];
+    sprintf(command, "dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o /Users/aleksandr/Desktop/list/grapth/%s", filename);
+    system(command);
+
+    char AAAA[100] = "/Users/aleksandr/Desktop/list/grapth/";
+
+    imageCounter++;
+
+    fprintf(LOG_FILE, "<img src=\"%s%s\" alt=\"Graph Image\"> \n", AAAA, filename);
+}
