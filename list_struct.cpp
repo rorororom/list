@@ -330,7 +330,6 @@ void CreateNode(FILE* dotFile, Node* id, const int value,
 }
 
 static int imageCounter = 0;
-#include "stb_image.h"
 
 void CreateNewGraph()
 {
