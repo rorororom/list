@@ -340,9 +340,9 @@ void CreateNewGraph()
     sprintf(command, "dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o /Users/aleksandr/Desktop/list/grapth/%s", filename);
     system(command);
 
-    char AAAA[100] = "/Users/aleksandr/Desktop/list/grapth/";
+    char path[100] = "/Users/aleksandr/Desktop/list/grapth/";
 
     imageCounter++;
 
-    fprintf(LOG_FILE, "<img src=\"%s%s\" alt=\"Graph Image\"> \n", AAAA, filename);
+    fprintf(LOG_FILE, "<img src=\"%s%s\" alt=\"Graph Image\"> \n", path, filename);
 }
