@@ -52,4 +52,4 @@ void CreateNode(FILE* dotFile, Node* id, const int value,
                                Node* next, Node* prev);
 void GenerateImage (struct List* list);
 void CreateNewGraph();
-
+#endif
