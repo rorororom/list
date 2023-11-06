@@ -11,7 +11,7 @@
 char count_gr[] = "1";
 static int cntGraph = 0;
 
-static void FillArrayFrom (int* prev, int* arrPrev, int i, struct List* list);
+static void FillArrayFrom (int* prev, int* arr, int i, struct List* list);
 static void InitializationArr (int* arr, int size);
 static void InitializationPrev (struct List* list);
 static void InitializationNext (struct List* list);
@@ -278,12 +278,12 @@ static int VerifyMeaningData (struct List* list)
     free(arrPrev);
 }
 
-static void FillArrayFrom(int* prev, int* arrPrev, int i, struct List* list)
+static void FillArrayFrom(int* prev, int* arr, int i, struct List* list)
 {
     int count = 0;
     while (i >= ZERO_ELEMENT && count < list->size)
     {
-        arrPrev[count] = list->data[i];
+        arr[count] = list->data[i];
         count++;
         i = prev[i];
     }
