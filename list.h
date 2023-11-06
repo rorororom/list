@@ -29,6 +29,9 @@ void DtorList (struct List* list);
 void Verify (struct List* list);
 void DumpList (struct List* list);
 
+int GetHead(struct List* list);
+int GetTail(struct List* list);
+
 void GenerateImage (struct List* list);
 
 struct List {
