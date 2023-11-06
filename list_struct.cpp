@@ -55,11 +55,11 @@ void DtorList(List* list)
 
     while (listHead != listTail)
     {
-        Node* NNNode = listHead;
+        Node* Node = listHead;
 
         listHead = listHead->next;
 
-        ListElemDtor(NNNode);
+        ListElemDtor(Node);
     }
 
     ListElemDtor(list->end);
