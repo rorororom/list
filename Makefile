@@ -14,7 +14,7 @@ CXXFLAGS =  -D _DEBUG -ggdb3 -std=c++17 -O0 -Wall -Wextra -Weffc++ -Waggressive-
 			-fstack-protector -fstrict-overflow -fno-omit-frame-pointer -Wlarger-than=8192         \
 			-Wstack-usage=8192 -fsanitize=address -fsanitize=undefined -fPIE -Werror=vla
 
-SOURCES = main.cpp list_struct.cpp log_funcs.cpp
+SOURCES = list.cpp log_funcs.cpp
 OBJECTS = $(SOURCES:%.cpp=%.o)
 EXECUTABLE = list_a.out
 
