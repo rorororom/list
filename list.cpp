@@ -22,7 +22,7 @@ int GetTail(struct List* list);
 static int VerifyMeaningData (struct List* list);
 static void ErrorCodes (int sum_errors);
 
-static void Partion (FILE* file, struct List* list);
+static void Partion (FILE* file);
 
 static void CreateNode(FILE* dotFile, int index, const char* fillColor, struct List* list);
 static void CreateNewGraph();
@@ -181,7 +181,7 @@ void DumpList (struct List* list)
 
 }
 
-static void Partion(FILE* file, struct List* list)
+static void Partion(FILE* file)
 {
     assert(list != nullptr);
 
