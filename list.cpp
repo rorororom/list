@@ -147,7 +147,7 @@ void DumpList (struct List* list)
         fprintf(LOG_FILE, "%.3d_|_", i);
     }
 
-    Partion(LOG_FILE, list);
+    Partion(LOG_FILE);
 
     fprintf(LOG_FILE, "\ndata: ");
     for (int i = 0; i < SIZE_DATA; i++)
@@ -155,7 +155,7 @@ void DumpList (struct List* list)
         fprintf(LOG_FILE, " %.3d |", list->data[i]);
     }
 
-    Partion(LOG_FILE, list);
+    Partion(LOG_FILE);
 
     fprintf(LOG_FILE, "\nnext: ");
     for (int i = 0; i < SIZE_DATA; i++)
@@ -164,7 +164,7 @@ void DumpList (struct List* list)
         else fprintf(LOG_FILE, " %.3d |", list->next[i]);
     }
 
-    Partion(LOG_FILE, list);
+    Partion(LOG_FILE);
 
     fprintf(LOG_FILE, "\nprev: ");
     for (int i = 0; i < SIZE_DATA; i++)
@@ -172,7 +172,7 @@ void DumpList (struct List* list)
         if (list->prev[i] < ZERO_ELEMENT) fprintf(LOG_FILE, "%.3d |", list->prev[i]);
         else fprintf(LOG_FILE, " %.3d |", list->prev[i]);
     }
-    Partion(LOG_FILE, list);
+    Partion(LOG_FILE);
 
 
     fprintf(LOG_FILE, "\n\nhead: [%.3d]\n", GetHead(list));
@@ -183,8 +183,6 @@ void DumpList (struct List* list)
 
 static void Partion(FILE* file)
 {
-    assert(list != nullptr);
-
     fprintf(file, "\n           ");
     for (int i = 0; i < SIZE_DATA - 1; i++)
     {
