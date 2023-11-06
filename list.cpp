@@ -19,49 +19,13 @@ static void InitializationNext (struct List* list);
 int GetHead(struct List* list);
 int GetTail(struct List* list);
 
-static void Verify (struct List* list);
 static int VerifyMeaningData (struct List* list);
 static void ErrorCodes (int sum_errors);
 
-static void DumpList (struct List* list);
 static void Partion (FILE* file, struct List* list);
 
 static void CreateNode(FILE* dotFile, int index, const char* fillColor, struct List* list);
 static void CreateNewGraph();
-
-int main()
-{
-    OpenLogFile("LOGE.log", "w");
-
-    struct List list = {};
-
-    CtorList(&list);
-
-    DumpList(&list);
-
-    for (int i = 0; i < WANT_COUNT_ADD; i++)
-    {
-        PushElement(&list, i, 10 * (i+1));
-    }
-
-    PopElement(&list, 3);
-    PopElement(&list, 5);
-    PopElement(&list, 1);
-    PushElement(&list, 4, 34);
-    PopElement(&list, 2);
-    PushElement(&list, 1, 18);
-    PushElement(&list, 2, 25);
-    PushElement(&list, 4, 41);
-    PopElement(&list, 4);
-    PushElement(&list, 3, 25);
-    PushElement(&list, 10, 25);
-
-
-    Verify(&list);
-    GenerateImage(&list);
-
-    DtorList(&list);
-}
 
 void CtorList (struct List* list)
 {
@@ -173,7 +137,7 @@ static void InitializationArr (int* arr, int size)
     }
 }
 
-static void DumpList (struct List* list)
+void DumpList (struct List* list)
 {
     assert(list != nullptr);
 
@@ -228,7 +192,7 @@ static void Partion(FILE* file, struct List* list)
     }
 }
 
-static void Verify (struct List* list)
+void Verify (struct List* list)
 {
     int sum_errors = 0;
 
