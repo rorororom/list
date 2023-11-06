@@ -11,7 +11,7 @@
 char count_gr[] = "1";
 static int cntGraph = 0;
 
-static void FillArrayFrom (int* prev, int* arr, int i, struct List* list);
+static void FillArrayFrom (int* prev, int* arrPrev, int i, struct List* list);
 static void InitializationArr (int* arr, int size);
 static void InitializationPrev (struct List* list);
 static void InitializationNext (struct List* list);
@@ -182,19 +182,19 @@ void DumpList (struct List* list)
     fprintf(LOG_FILE, "\nprev: ");
     for (int i = 0; i < SIZE_DATA; i++)
     {
-        if (list->prev[i] < ZERO_ELEMENT) fprintf(LOG_FILE, "%.3d |", list->prev[i]);
+        if (list->prev[i] < 0) fprintf(LOG_FILE, "%.3d |", list->prev[i]);
         else fprintf(LOG_FILE, " %.3d |", list->prev[i]);
     }
     Partion(LOG_FILE);
 
 
-    fprintf(LOG_FILE, "\n\nhead: [%.3d]\n", GetHead(list));
-    fprintf(LOG_FILE, "tail: [%.3d]\n", GetTail(list));
+    fprintf(LOG_FILE, "\n\nhead: [%.3d]\n", list->next[0]);
+    fprintf(LOG_FILE, "tail: [%.3d]\n", list->prev[0]);
     fprintf(LOG_FILE, "free: [%.3d]\n", list->free);
 
 }
 
-static void Partion(FILE* file)
+void Partion(FILE* file)
 {
     fprintf(file, "\n           ");
     for (int i = 0; i < SIZE_DATA - 1; i++)
