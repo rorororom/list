@@ -25,7 +25,6 @@ static void ErrorCodes (int sum_errors);
 static void Partion (FILE* file);
 
 static void CreateNode(FILE* dotFile, int index, const char* fillColor, struct List* list);
-static void CreateNewGraph();
 
 void CtorList (struct List* list)
 {
@@ -71,6 +70,13 @@ void PushElement (struct List* list, int index, int value)
     assert(list != nullptr);
     assert(index >= ZERO_ELEMENT && index < SIZE_DATA);
 
+    if (list->data[index] < 0)
+    {
+        printf("нельзя добавлять после свободного\n");
+        fprintf(LOG_FILE, "нельзя добавлять после свободного\n");
+        return;
+    }
+
     int nowIndex = abs(list->free);
     list->free = abs(list->next[nowIndex]);
     list->data[nowIndex] = value;
@@ -89,8 +95,15 @@ void PushElement (struct List* list, int index, int value)
 
 void PopElement (struct List* list, int index)
 {
-    assert(index >= ZERO_ELEMENT && index < SIZE_DATA);
+    assert(index > ZERO_ELEMENT && index < SIZE_DATA);
     assert(list != nullptr);
+
+    if (list->data[index] < 0)
+    {
+        printf("нельзя удалять свободный\n");
+        fprintf(LOG_FILE, "нельзя удалять свободный\n");
+        return;
+    }
 
     list->prev[list->next[index]] = list->prev[index];
     list->next[list->prev[index]] = list->next[index];
@@ -351,19 +364,18 @@ static void CreateNode(FILE* dotFile, int index, const char* fillColor, struct L
             index, fillColor, index, list->data[index], list->next[index], list->prev[index]);
 }
 
+static int imageCounter = 0;
+
 void CreateNewGraph()
 {
-    time_t now = time(NULL);
-    struct tm* timeinfo = localtime(&now);
-
     char filename[100];
-    sprintf(filename, "grath_%04d-%02d-%02d_%02d-%02d-%02d.png",
-            timeinfo->tm_year + 1900, timeinfo->tm_mon + 1, timeinfo->tm_mday,
-            timeinfo->tm_hour, timeinfo->tm_min, timeinfo->tm_sec);
+    sprintf(filename, "grath_%04d.png", imageCounter);
 
     char command[1000];
-    sprintf(command, "dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o /Users/aleksandr/Desktop/list/grapths/%s", filename);
+    sprintf(command, "dot -Tpng /Users/aleksandr/Desktop/list/grapth.dot -o /Users/aleksandr/Desktop/list/%s", filename);
     system(command);
+
+    imageCounter++;
 }
 
 int GetHead(struct List* list)
