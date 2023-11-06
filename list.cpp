@@ -16,9 +16,6 @@ static void InitializationArr (int* arr, int size);
 static void InitializationPrev (struct List* list);
 static void InitializationNext (struct List* list);
 
-int GetHead(struct List* list);
-int GetTail(struct List* list);
-
 static int VerifyMeaningData (struct List* list);
 static void ErrorCodes (int sum_errors);
 
