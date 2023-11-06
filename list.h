@@ -26,6 +26,9 @@ void PushElement (struct List* list, int index, int value);
 void PopElement (struct List* list, int index);
 void DtorList (struct List* list);
 
+void Verify (struct List* list);
+void DumpList (struct List* list);
+
 void GenerateImage (struct List* list);
 
 struct List {
