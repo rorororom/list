@@ -1,18 +1,20 @@
 # List
 
-##### This is a project on data structure - List
+##### Проект про структуру данных - List.
 
-### 0. Program launch
-#### To run the program in the terminal you need to write:
+### 0. Запуск программы
+#### Чтобы запустить программу необходимо написать (произойдет компиляция)
 ```
 make
 ```
-#### Further
+#### Далее
 ```
 make run
 ```
-#### To clean up object files use
+#### Чтобы очистить объектные файлы:
 ```
 make clean
 ```
-### 1. What does the program do?
+### Описание
+#### Этот проект представляет из себя инструмент для визуализации двусвязного списка в языке программирования C. Он использует библиотеку Graphviz для создания изображения списка в виде графа.
+
