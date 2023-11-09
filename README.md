@@ -15,3 +15,4 @@ make run
 ```
 make clean
 ```
+### 1. What does the program do?
